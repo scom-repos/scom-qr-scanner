@@ -1,0 +1,8 @@
+{
+    "name": "@scom/scom-qr-scanner",
+    "type": "widget",
+    "version": "0.1.0",
+    "dependencies": [
+        "@ijstech/components"
+    ]
+}

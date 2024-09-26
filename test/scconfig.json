@@ -1,0 +1,102 @@
+{
+  "env": "testnet",
+  "main": "@modules/module1",
+  "moduleDir": "modules",
+  "modules": {
+    "@modules/module1": {
+      "path": "module1"
+    }
+  },
+  "dependencies": {
+    "@scom/scom-qr-scanner": "*"
+  },
+  "menus": [
+    {
+      "caption": "Module 1",
+      "url": "/module1",
+      "module": "@modules/module1"
+    }
+  ],
+  "routes": [
+    {
+      "url": "/module1",
+      "module": "@modules/module1",
+      "default": true
+    }
+  ],
+  "themes": {
+    "default": "dark",
+    "dark": {
+      "background": {
+        "default": "#1a1a1a",
+        "paper": "#121212",
+        "main": "#000",
+        "modal": "#000",
+        "gradient": "linear-gradient(135deg, #ffefa6 0%, #fde192 20%, #f8bc5d 40%, #f39323 100%)"
+      },
+      "colors": {
+        "primary": {
+          "contrastText": "#fff",
+          "dark": "#FE8B10",
+          "light": "#FEC710",
+          "main": "#FE9F10"
+        },
+        "secondary": {
+          "contrastText": "#fff",
+          "light": "#AAAAAA",
+          "main": "#444444",
+          "dark": "#282828"
+        },
+        "warning": {
+          "dark": "#ff9f2f",
+          "light": "#ff9f2f",
+          "main": "#ff9f2f"
+        },
+        "success": {
+          "main": "#66e205",
+          "light": "rgba(0, 186, 124, 0.1)"
+        },
+        "error": {
+          "main": "#bc1870",
+          "light": "rgba(249, 24, 128, 0.1)"
+        }
+      },
+      "divider": "rgb(47, 51, 54)",
+      "layout": {
+        "container": {
+          "maxWidth": "77.5rem"
+        }
+      },
+      "text": {
+        "secondary": "#666666",
+        "primary": "#fff",
+        "disabled": "#757575"
+      },
+      "action": {
+        "active": "rgba(0, 0, 0, 0.54)",
+        "activeBackground": "#222222",
+        "hoverBackground": "#222222",
+        "hover": "#fff",
+        "disabled": "#404040"
+      },
+      "shadows": {
+        "1": "0 0 0 rgba(0, 0, 0, 0)"
+      },
+      "typography": {
+        "fontSize": "14px"
+      },
+      "input": {
+        "background": "#222222",
+        "fontColor": "#fff"
+      }
+    },
+    "light": {}
+  },
+  "copyrightInfo": "&#169; 2022 IJS Technologies. All rights reserved.",
+  "version": "0.1.0-beta",
+  "breakpoints": {
+    "mobile": 414,
+    "tablet": 1280,
+    "desktop": 1920
+  }
+}
