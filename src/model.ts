@@ -2,12 +2,7 @@ import { application, Module, RequireJS } from '@ijstech/components';
 declare const window: any;
 
 const reqs = ['qr-scanner'];
-RequireJS.config({
-  baseUrl: `${application.currentModuleDir}/lib`,
-  paths: {
-    'qr-scanner': 'qr-scanner.min.js'
-  }
-})
+const baseLibUrl = `${application.currentModuleDir}/lib`;
 
 export class Model {
   private _data = {};
@@ -29,6 +24,12 @@ export class Model {
     if (window.QRScanner) return;
     return new Promise((resolve, reject) => {
       try {
+        RequireJS.config({
+          baseUrl: baseLibUrl,
+          paths: {
+            'qr-scanner': 'qr-scanner.min.js'
+          }
+        })
         RequireJS.require(reqs, function (QRScanner: any) {
           resolve(QRScanner);
           if (!window.QRScanner) {

@@ -75,6 +75,11 @@ export default class ScomQRScanner extends Module {
         this.model.setTag(value);
     }
 
+    stop() {
+        this.onStopQRScanner();
+        if (this.pnlInfo) this.pnlInfo.visible = false;
+    }
+
     private onStartQRScanner() {
         try {
             if (!this.scanner) {
@@ -107,9 +112,11 @@ export default class ScomQRScanner extends Module {
     }
 
     private onStopQRScanner() {
-        this.scanner.stop();
-        this.vStackMain.visible = true;
-        this.pnlScanner.visible = false;
+        if (this.scanner) {
+            this.scanner.stop();
+            this.vStackMain.visible = true;
+            this.pnlScanner.visible = false;
+        }
     }
 
     private async initQRScanner() {
@@ -195,7 +202,7 @@ export default class ScomQRScanner extends Module {
                         font={{ color: Theme.colors.error.main }}
                     />
                 </i-vstack>
-                <i-panel id="pnlScanner" visible={false} padding={{ bottom: '3.75rem' }}>
+                <i-panel id="pnlScanner" visible={false}>
                     <i-panel id="pnlVideo" />
                     <i-button
                         id="btnStop"
@@ -208,7 +215,7 @@ export default class ScomQRScanner extends Module {
                         onClick={() => this.onStopQRScanner()}
                         mediaQueries={[
                             {
-                                maxWidth: '400px',
+                                maxWidth: '768px',
                                 properties: {
                                     maxWidth: '8.125rem',
                                     padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }

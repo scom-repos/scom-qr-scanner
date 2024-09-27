@@ -74,6 +74,7 @@ declare module "@scom/scom-qr-scanner" {
         getData(): {};
         getTag(): any;
         setTag(value: any): void;
+        stop(): void;
         private onStartQRScanner;
         private onStopQRScanner;
         private initQRScanner;
