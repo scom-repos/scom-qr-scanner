@@ -195,7 +195,7 @@ export default class ScomQRScanner extends Module {
                         font={{ color: Theme.colors.error.main }}
                     />
                 </i-vstack>
-                <i-panel id="pnlScanner" visible={false}>
+                <i-panel id="pnlScanner" visible={false} padding={{ bottom: '3.75rem' }}>
                     <i-panel id="pnlVideo" />
                     <i-button
                         id="btnStop"
@@ -206,6 +206,15 @@ export default class ScomQRScanner extends Module {
                         padding={{ left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }}
                         class={btnStopStyle}
                         onClick={() => this.onStopQRScanner()}
+                        mediaQueries={[
+                            {
+                                maxWidth: '400px',
+                                properties: {
+                                    maxWidth: '8.125rem',
+                                    padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }
+                                }
+                            }
+                        ]}
                     />
                 </i-panel>
             </i-vstack>

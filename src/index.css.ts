@@ -24,7 +24,7 @@ export const textCenterStyle = Styles.style({
 
 export const btnStopStyle = Styles.style({
   position: 'absolute',
-  bottom: '2.5%',
+  bottom: '10px',
   left: '50%',
   transform: 'translate(-50%, -50%)',
   margin: '0 auto'

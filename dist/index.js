@@ -30,7 +30,7 @@ define("@scom/scom-qr-scanner/index.css.ts", ["require", "exports", "@ijstech/co
     });
     exports.btnStopStyle = components_1.Styles.style({
         position: 'absolute',
-        bottom: '2.5%',
+        bottom: '10px',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         margin: '0 auto'
@@ -249,9 +249,17 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                             this.$render("i-icon", { id: "iconCopy", name: "copy", fill: Theme.colors.info.main, width: 18, height: 18 }),
                             this.$render("i-label", { caption: "Copy text", font: { size: '1rem', bold: true, color: Theme.colors.info.main } }))),
                     this.$render("i-label", { id: "lbError", visible: false, caption: "No camera detected", class: index_css_1.textCenterStyle, font: { color: Theme.colors.error.main } })),
-                this.$render("i-panel", { id: "pnlScanner", visible: false },
+                this.$render("i-panel", { id: "pnlScanner", visible: false, padding: { bottom: '3.75rem' } },
                     this.$render("i-panel", { id: "pnlVideo" }),
-                    this.$render("i-button", { id: "btnStop", caption: "Stop scan", visible: false, font: { bold: true }, width: 160, padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, class: index_css_1.btnStopStyle, onClick: () => this.onStopQRScanner() }))));
+                    this.$render("i-button", { id: "btnStop", caption: "Stop scan", visible: false, font: { bold: true }, width: 160, padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, class: index_css_1.btnStopStyle, onClick: () => this.onStopQRScanner(), mediaQueries: [
+                            {
+                                maxWidth: '400px',
+                                properties: {
+                                    maxWidth: '8.125rem',
+                                    padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }
+                                }
+                            }
+                        ] }))));
         }
     };
     ScomQRScanner = __decorate([
