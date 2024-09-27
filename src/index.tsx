@@ -15,6 +15,8 @@ import { btnStopStyle, qrScannerStyle, textCenterStyle } from './index.css';
 import { Model } from './model';
 const Theme = Styles.Theme.ThemeVars;
 declare const window: any;
+declare const navigator: any;
+const DEFAULT_CANVAS_SIZE = 400;
 
 interface ScomQRScannerElement extends ControlElement {
 
@@ -38,13 +40,15 @@ export default class ScomQRScanner extends Module {
     private pnlVideo: Panel;
     private pnlInfo: Panel;
     private lbQRText: Label;
-    private lbError: Label;
     private iconCopy: Icon;
+    private copyTimer: any;
     private btnScan: Button;
     private btnStop: Button;
-    private copyTimer: any;
+    private lbError: Label;
     private video: HTMLVideoElement;
-    private scanner: any;
+    private scanning: boolean;
+    private videoStream: MediaStream;
+    private pnlOverlay: Panel;
 
     static async create(options?: ScomQRScannerElement, parent?: Container) {
         let self = new this(parent, options);
@@ -81,56 +85,188 @@ export default class ScomQRScanner extends Module {
     }
 
     private onStartQRScanner() {
-        try {
-            if (!this.scanner) {
-                const self = this;
-                this.scanner = new window.QRScanner(
-                    this.video,
-                    (result: any) => {
-                        self.scanner.stop();
-                        self.lbQRText.caption = result.data;
-                        self.pnlScanner.visible = false;
-                        self.vStackMain.visible = true;
-                        self.pnlInfo.visible = true;
-                    },
-                    {
-                        highlightScanRegion: true,
-                        highlightCodeOutline: true,
-                    }
-                )
-            }
-            this.scanner.start();
-            this.btnStop.visible = false;
-            this.pnlScanner.visible = true;
-            this.vStackMain.visible = false;
+        const self = this;
+        const video = this.video;
+        this.scanning = true;
+
+        const getResult = (stream: MediaStream) => {
+            self.videoStream = stream;
+            video.srcObject = stream;
+            video.play();
+            self.video.style.display = 'none';
+            self.pnlOverlay.visible = false;
+            self.vStackMain.visible = false;
+            self.btnStop.visible = false;
+            self.pnlScanner.visible = true;
             setTimeout(() => {
-                this.btnStop.visible = true;
-            }, 1000)
-        } catch (error) {
-            console.error(error);
+                self.video.style.display = '';
+                setTimeout(() => {
+                    self.updateOverlay();
+                }, 500);
+            }, 1000);
+            video.onloadedmetadata = function () {
+                self.decodeQRFromStream(video);
+            }
+        }
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(function (stream: MediaStream) {
+                    getResult(stream);
+                })
+                .catch(function (error: any) {
+                    console.error('Error accessing the camera:', error);
+                });
+        } else {
+            navigator.getUserMedia({ video: { facingMode: 'environment' } },
+                (stream: MediaStream) => {
+                    getResult(stream);
+                },
+                (error: any) => {
+                    console.error('Error accessing the camera:', error);
+                }
+            );
         }
     }
 
     private onStopQRScanner() {
-        if (this.scanner) {
-            this.scanner.stop();
-            this.vStackMain.visible = true;
-            this.pnlScanner.visible = false;
+        this.scanning = false;
+        this.videoStream.getTracks().forEach(track => track.stop());
+        this.vStackMain.visible = true;
+        this.pnlScanner.visible = false;
+    }
+
+    private async decodeQRFromStream(video: HTMLVideoElement) {
+        if (!this.scanning) return;
+        const self = this;
+        const canvasElement = document.createElement('canvas');
+        const canvas = canvasElement.getContext('2d');
+        canvasElement.width = video.videoWidth;
+        canvasElement.height = video.videoHeight;
+        canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+        const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+
+        const code = await this.model.getQRCode(imageData);
+        if (code?.data) {
+            self.pnlInfo.visible = true;
+            self.lbQRText.caption = code.data;
+            this.onStopQRScanner();
+        } else {
+            requestAnimationFrame(() => this.decodeQRFromStream(video));
         }
     }
 
     private async initQRScanner() {
-        await this.model.loadLib();
+        const { isMobile, isHttps, hasCamera } = this.model;
         const video = this.createElement('video', this.pnlVideo) as HTMLVideoElement;
         video.setAttribute('playsinline', 'true');
         this.video = video;
-        const hasCamera = await window.QRScanner.hasCamera();
         this.btnScan.enabled = hasCamera;
         this.lbError.visible = !hasCamera;
         if (!hasCamera) {
-            const { isMobile, isHttps } = this.model;
             this.lbError.caption = isMobile && !isHttps ? 'The QR scanner does not support HTTP when using a mobile device. Please ensure that the website is served over HTTPS for compatibility with the scanner!' : 'No camera detected!';
+        } else {
+            this.initHighLightScanRegion();
         }
+    }
+
+    private initHighLightScanRegion() {
+        this.pnlOverlay.clearInnerHTML();
+        this.pnlOverlay.innerHTML = '<svg viewBox="0 0 238 238" '
+            + 'preserveAspectRatio="none" style="position:absolute;width:100%;height:100%;left:0;top:0;'
+            + 'fill:none;stroke:#e9b213;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;">'
+            + '<path d="M31 2H10a8 8 0 0 0-8 8v21M207 2h21a8 8 0 0 1 8 8v21m0 176v21a8 8 0 0 1-8 8h-21m-176 '
+            + '0H10a8 8 0 0 1-8-8v-21"/></svg>';
+        try {
+            this.pnlOverlay.firstElementChild!.animate({ transform: ['scale(.98)', 'scale(1.01)'] }, {
+                duration: 400,
+                iterations: Infinity,
+                direction: 'alternate',
+                easing: 'ease-in-out',
+            });
+        } catch { }
+        window.addEventListener('resize', () => { this.updateOverlay() });
+    }
+
+    private updateOverlay() {
+        requestAnimationFrame(() => {
+            if (!this.pnlOverlay || !this.pnlScanner?.visible) return;
+            const video = this.video;
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            const elementWidth = video.offsetWidth;
+            const elementHeight = video.offsetHeight;
+            const elementX = video.offsetLeft;
+            const elementY = video.offsetTop;
+
+            const videoStyle = window.getComputedStyle(video);
+            const videoObjectFit = videoStyle.objectFit;
+            const videoAspectRatio = videoWidth / videoHeight;
+            const elementAspectRatio = elementWidth / elementHeight;
+            let videoScaledWidth: number;
+            let videoScaledHeight: number;
+            switch (videoObjectFit) {
+                case 'none':
+                    videoScaledWidth = videoWidth;
+                    videoScaledHeight = videoHeight;
+                    break;
+                case 'fill':
+                    videoScaledWidth = elementWidth;
+                    videoScaledHeight = elementHeight;
+                    break;
+                default:
+                    if (videoObjectFit === 'cover'
+                        ? videoAspectRatio > elementAspectRatio
+                        : videoAspectRatio < elementAspectRatio) {
+                        videoScaledHeight = elementHeight;
+                        videoScaledWidth = videoScaledHeight * videoAspectRatio;
+                    } else {
+                        videoScaledWidth = elementWidth;
+                        videoScaledHeight = videoScaledWidth / videoAspectRatio;
+                    }
+                    if (videoObjectFit === 'scale-down') {
+                        videoScaledWidth = Math.min(videoScaledWidth, videoWidth);
+                        videoScaledHeight = Math.min(videoScaledHeight, videoHeight);
+                    }
+            }
+
+            const [videoX, videoY] = videoStyle.objectPosition.split(' ').map((length, i) => {
+                const lengthValue = parseFloat(length);
+                return length.endsWith('%')
+                    ? (!i ? elementWidth - videoScaledWidth : elementHeight - videoScaledHeight) * lengthValue / 100
+                    : lengthValue;
+            });
+
+            const scanRegion = this.calculateScanRegion(video);
+            const regionWidth = scanRegion.width || videoWidth;
+            const regionHeight = scanRegion.height || videoHeight;
+            const regionX = scanRegion.x || 0;
+            const regionY = scanRegion.y || 0;
+
+            this.pnlOverlay.width = `${regionWidth / videoWidth * videoScaledWidth}px`;
+            this.pnlOverlay.height = `${regionHeight / videoHeight * videoScaledHeight}px`;
+            this.pnlOverlay.top = `${elementY + videoY + regionY / videoHeight * videoScaledHeight}px`;
+            const isVideoMirrored = /scaleX\(-1\)/.test(video.style.transform!);
+            this.pnlOverlay.left = `${elementX
+                + (isVideoMirrored ? elementWidth - videoX - videoScaledWidth : videoX)
+                + (isVideoMirrored ? videoWidth - regionX - regionWidth : regionX) / videoWidth * videoScaledWidth}px`;
+            this.pnlOverlay.style.transform = video.style.transform;
+            if (!this.btnStop.visible) this.btnStop.visible = true;
+            if (!this.pnlOverlay.visible) this.pnlOverlay.visible = true;
+        });
+    }
+
+    private calculateScanRegion(video: HTMLVideoElement) {
+        const smallestDimension = Math.min(video.videoWidth, video.videoHeight);
+        const scanRegionSize = Math.round(2 / 3 * smallestDimension);
+        return {
+            x: Math.round((video.videoWidth - scanRegionSize) / 2),
+            y: Math.round((video.videoHeight - scanRegionSize) / 2),
+            width: scanRegionSize,
+            height: scanRegionSize,
+            downScaledWidth: DEFAULT_CANVAS_SIZE,
+            downScaledHeight: DEFAULT_CANVAS_SIZE,
+        };
     }
 
     private async onCopy() {
@@ -150,7 +286,7 @@ export default class ScomQRScanner extends Module {
         if (!this.model) {
             this.model = new Model(this);
         }
-        await super.init();
+        super.init();
         this.initQRScanner();
     }
 
@@ -203,22 +339,22 @@ export default class ScomQRScanner extends Module {
                     />
                 </i-vstack>
                 <i-panel id="pnlScanner" visible={false}>
-                    <i-panel id="pnlVideo" />
+                    <i-panel id="pnlVideo">
+                        <i-panel id="pnlOverlay" visible={false} position="absolute" cursor="none" width="100%" height="100%" />
+                    </i-panel>
                     <i-button
                         id="btnStop"
                         caption="Stop scan"
-                        visible={false}
                         font={{ bold: true }}
                         width={160}
-                        padding={{ left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }}
+                        padding={{ left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }}
                         class={btnStopStyle}
                         onClick={() => this.onStopQRScanner()}
                         mediaQueries={[
                             {
                                 maxWidth: '768px',
                                 properties: {
-                                    maxWidth: '8.125rem',
-                                    padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }
+                                    maxWidth: '8.125rem'
                                 }
                             }
                         ]}

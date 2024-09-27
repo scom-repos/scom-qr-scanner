@@ -1,5 +1,7 @@
 import { application, Module, RequireJS } from '@ijstech/components';
+import { decodeQRCode } from './utils/index';
 declare const window: any;
+declare const navigator: any;
 
 const reqs = ['qr-scanner'];
 const baseLibUrl = `${application.currentModuleDir}/lib`;
@@ -14,6 +16,10 @@ export class Model {
 
   get isHttps() {
     return window.location.protocol === 'https:';
+  }
+
+  get hasCamera() {
+    return !!((navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || navigator.getUserMedia);
   }
 
   constructor(module: Module) {
@@ -108,5 +114,16 @@ export class Model {
   private _getActions() {
     const actions = [];
     return actions;
+  }
+
+  async getQRCode(imageData: ImageData) {
+    if (window.BarcodeDetector) {
+      const barcodeDetector = new window.BarcodeDetector({
+        formats: ["qr_code"],
+      });
+      const data = await barcodeDetector.detect(imageData);
+      return { data: data.rawValue };
+    }
+    return decodeQRCode(imageData.data, imageData.width, imageData.height);
   }
 }

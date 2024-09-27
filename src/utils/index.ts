@@ -1,0 +1,1 @@
+export { decodeQRCode } from './scan';
