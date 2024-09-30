@@ -1,10 +1,7 @@
-import { application, Module, RequireJS } from '@ijstech/components';
+import { Module } from '@ijstech/components';
 import { decodeQRCode } from './utils/index';
 declare const window: any;
 declare const navigator: any;
-
-const reqs = ['qr-scanner'];
-const baseLibUrl = `${application.currentModuleDir}/lib`;
 
 export class Model {
   private _data = {};
@@ -24,28 +21,6 @@ export class Model {
 
   constructor(module: Module) {
     this.module = module;
-  }
-
-  async loadLib() {
-    if (window.QRScanner) return;
-    return new Promise((resolve, reject) => {
-      try {
-        RequireJS.config({
-          baseUrl: baseLibUrl,
-          paths: {
-            'qr-scanner': 'qr-scanner.min.js'
-          }
-        })
-        RequireJS.require(reqs, function (QRScanner: any) {
-          resolve(QRScanner);
-          if (!window.QRScanner) {
-            window.QRScanner = QRScanner;
-          }
-        });
-      } catch (err) {
-        console.log(err)
-      }
-    });
   }
 
   getConfigurators() {

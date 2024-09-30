@@ -183,7 +183,6 @@ declare module "@scom/scom-qr-scanner/model.ts" {
         get isHttps(): boolean;
         get hasCamera(): boolean;
         constructor(module: Module);
-        loadLib(): Promise<unknown>;
         getConfigurators(): {
             name: string;
             target: string;

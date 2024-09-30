@@ -2801,12 +2801,10 @@ define("@scom/scom-qr-scanner/utils/index.ts", ["require", "exports", "@scom/sco
     exports.decodeQRCode = void 0;
     Object.defineProperty(exports, "decodeQRCode", { enumerable: true, get: function () { return scan_1.decodeQRCode; } });
 });
-define("@scom/scom-qr-scanner/model.ts", ["require", "exports", "@ijstech/components", "@scom/scom-qr-scanner/utils/index.ts"], function (require, exports, components_2, index_1) {
+define("@scom/scom-qr-scanner/model.ts", ["require", "exports", "@scom/scom-qr-scanner/utils/index.ts"], function (require, exports, index_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Model = void 0;
-    const reqs = ['qr-scanner'];
-    const baseLibUrl = `${components_2.application.currentModuleDir}/lib`;
     class Model {
         get isMobile() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -2820,29 +2818,6 @@ define("@scom/scom-qr-scanner/model.ts", ["require", "exports", "@ijstech/compon
         constructor(module) {
             this._data = {};
             this.module = module;
-        }
-        async loadLib() {
-            if (window.QRScanner)
-                return;
-            return new Promise((resolve, reject) => {
-                try {
-                    components_2.RequireJS.config({
-                        baseUrl: baseLibUrl,
-                        paths: {
-                            'qr-scanner': 'qr-scanner.min.js'
-                        }
-                    });
-                    components_2.RequireJS.require(reqs, function (QRScanner) {
-                        resolve(QRScanner);
-                        if (!window.QRScanner) {
-                            window.QRScanner = QRScanner;
-                        }
-                    });
-                }
-                catch (err) {
-                    console.log(err);
-                }
-            });
         }
         getConfigurators() {
             return [
@@ -2917,12 +2892,12 @@ define("@scom/scom-qr-scanner/model.ts", ["require", "exports", "@ijstech/compon
     }
     exports.Model = Model;
 });
-define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@scom/scom-qr-scanner/index.css.ts", "@scom/scom-qr-scanner/model.ts"], function (require, exports, components_3, index_css_1, model_1) {
+define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@scom/scom-qr-scanner/index.css.ts", "@scom/scom-qr-scanner/model.ts"], function (require, exports, components_2, index_css_1, model_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_3.Styles.Theme.ThemeVars;
+    const Theme = components_2.Styles.Theme.ThemeVars;
     const DEFAULT_CANVAS_SIZE = 400;
-    let ScomQRScanner = class ScomQRScanner extends components_3.Module {
+    let ScomQRScanner = class ScomQRScanner extends components_2.Module {
         constructor() {
             super(...arguments);
             this.tag = {};
@@ -3134,7 +3109,7 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
         }
         async onCopy() {
             try {
-                await components_3.application.copyToClipboard(this.lbQRText.caption);
+                await components_2.application.copyToClipboard(this.lbQRText.caption);
                 this.iconCopy.name = 'check';
                 this.iconCopy.fill = Theme.colors.success.main;
                 if (this.copyTimer)
@@ -3180,7 +3155,7 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
         }
     };
     ScomQRScanner = __decorate([
-        (0, components_3.customElements)('i-scom-qr-scanner')
+        (0, components_2.customElements)('i-scom-qr-scanner')
     ], ScomQRScanner);
     exports.default = ScomQRScanner;
 });
