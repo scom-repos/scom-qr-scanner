@@ -7,7 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 define("@scom/scom-qr-scanner/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.btnStopStyle = exports.textCenterStyle = exports.qrScannerStyle = void 0;
+    exports.svgScanRegion = exports.scaleAnimation = exports.mdStyle = exports.btnStopStyle = exports.textCenterStyle = exports.qrScannerStyle = void 0;
     const Theme = components_1.Styles.Theme.ThemeVars;
     exports.qrScannerStyle = components_1.Styles.style({
         $nest: {
@@ -20,8 +20,8 @@ define("@scom/scom-qr-scanner/index.css.ts", ["require", "exports", "@ijstech/co
             },
             'video': {
                 width: '100%',
-                height: 'auto',
-                margin: '0 auto'
+                height: '100%',
+                objectFit: 'cover'
             }
         }
     });
@@ -30,11 +30,34 @@ define("@scom/scom-qr-scanner/index.css.ts", ["require", "exports", "@ijstech/co
     });
     exports.btnStopStyle = components_1.Styles.style({
         position: 'absolute',
-        top: 'calc(100% - 40px)',
+        top: '85%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         margin: '0 auto'
     });
+    exports.mdStyle = components_1.Styles.style({
+        $nest: {
+            '.modal': {
+                padding: 0
+            },
+            '.i-modal_body': {
+                height: '100%'
+            }
+        }
+    });
+    exports.scaleAnimation = components_1.Styles.keyframes({
+        from: {
+            transform: 'scale(.98)'
+        },
+        to: {
+            transform: 'scale(1.01)'
+        }
+    });
+    exports.svgScanRegion = '<svg viewBox="0 0 238 238" '
+        + 'preserveAspectRatio="none" style="position:absolute;width:100%;height:100%;left:0;top:0;'
+        + 'fill:none;stroke:#e9b213;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;">'
+        + '<path d="M31 2H10a8 8 0 0 0-8 8v21M207 2h21a8 8 0 0 1 8 8v21m0 176v21a8 8 0 0 1-8 8h-21m-176 '
+        + '0H10a8 8 0 0 1-8-8v-21"/></svg>';
 });
 define("@scom/scom-qr-scanner/utils/bitMatrix.ts", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -2926,11 +2949,11 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
             this.model.setTag(value);
         }
         stop() {
-            this.onStopQRScanner();
+            this.handleStopQRScanner();
             if (this.pnlInfo)
                 this.pnlInfo.visible = false;
         }
-        onStartQRScanner() {
+        handleStartQRScanner() {
             const self = this;
             const video = this.video;
             this.scanning = true;
@@ -2938,16 +2961,12 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                 self.videoStream = stream;
                 video.srcObject = stream;
                 video.play();
-                self.video.style.display = 'none';
                 self.pnlOverlay.visible = false;
                 self.vStackMain.visible = false;
                 self.btnStop.visible = false;
-                self.pnlScanner.visible = true;
+                self.mdScanner.visible = true;
                 setTimeout(() => {
-                    self.video.style.display = '';
-                    setTimeout(() => {
-                        self.updateOverlay();
-                    }, 500);
+                    self.updateOverlay();
                 }, 1000);
                 video.onloadedmetadata = function () {
                     self.decodeQRFromStream(video);
@@ -2970,16 +2989,15 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                 });
             }
         }
-        onStopQRScanner() {
+        handleStopQRScanner() {
             this.scanning = false;
             this.videoStream.getTracks().forEach(track => track.stop());
             this.vStackMain.visible = true;
-            this.pnlScanner.visible = false;
+            this.mdScanner.visible = false;
         }
         async decodeQRFromStream(video) {
             if (!this.scanning)
                 return;
-            const self = this;
             const canvasElement = document.createElement('canvas');
             const canvas = canvasElement.getContext('2d');
             canvasElement.width = video.videoWidth;
@@ -2988,9 +3006,9 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
             const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             const code = await this.model.getQRCode(imageData);
             if (code?.data) {
-                self.pnlInfo.visible = true;
-                self.lbQRText.caption = code.data;
-                this.onStopQRScanner();
+                this.pnlInfo.visible = true;
+                this.lbQRText.caption = code.data;
+                this.handleStopQRScanner();
             }
             else {
                 requestAnimationFrame(() => this.decodeQRFromStream(video));
@@ -3012,25 +3030,16 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
         }
         initHighLightScanRegion() {
             this.pnlOverlay.clearInnerHTML();
-            this.pnlOverlay.innerHTML = '<svg viewBox="0 0 238 238" '
-                + 'preserveAspectRatio="none" style="position:absolute;width:100%;height:100%;left:0;top:0;'
-                + 'fill:none;stroke:#e9b213;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;">'
-                + '<path d="M31 2H10a8 8 0 0 0-8 8v21M207 2h21a8 8 0 0 1 8 8v21m0 176v21a8 8 0 0 1-8 8h-21m-176 '
-                + '0H10a8 8 0 0 1-8-8v-21"/></svg>';
-            try {
-                this.pnlOverlay.firstElementChild.animate({ transform: ['scale(.98)', 'scale(1.01)'] }, {
-                    duration: 400,
-                    iterations: Infinity,
-                    direction: 'alternate',
-                    easing: 'ease-in-out',
-                });
+            this.pnlOverlay.innerHTML = index_css_1.svgScanRegion;
+            const overlayElement = this.pnlOverlay.firstElementChild;
+            if (overlayElement) {
+                overlayElement.style.animation = `${index_css_1.scaleAnimation} 400ms infinite alternate ease-in-out`;
             }
-            catch { }
             window.addEventListener('resize', () => { this.updateOverlay(); });
         }
         updateOverlay() {
             requestAnimationFrame(() => {
-                if (!this.pnlOverlay || !this.pnlScanner?.visible)
+                if (!this.pnlOverlay || !this.mdScanner?.visible)
                     return;
                 const video = this.video;
                 const videoWidth = video.videoWidth;
@@ -3045,30 +3054,18 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                 const elementAspectRatio = elementWidth / elementHeight;
                 let videoScaledWidth;
                 let videoScaledHeight;
-                switch (videoObjectFit) {
-                    case 'none':
-                        videoScaledWidth = videoWidth;
-                        videoScaledHeight = videoHeight;
-                        break;
-                    case 'fill':
-                        videoScaledWidth = elementWidth;
-                        videoScaledHeight = elementHeight;
-                        break;
-                    default:
-                        if (videoObjectFit === 'cover'
-                            ? videoAspectRatio > elementAspectRatio
-                            : videoAspectRatio < elementAspectRatio) {
-                            videoScaledHeight = elementHeight;
-                            videoScaledWidth = videoScaledHeight * videoAspectRatio;
-                        }
-                        else {
-                            videoScaledWidth = elementWidth;
-                            videoScaledHeight = videoScaledWidth / videoAspectRatio;
-                        }
-                        if (videoObjectFit === 'scale-down') {
-                            videoScaledWidth = Math.min(videoScaledWidth, videoWidth);
-                            videoScaledHeight = Math.min(videoScaledHeight, videoHeight);
-                        }
+                const smallerDimension = elementHeight > elementWidth ? elementWidth : elementHeight;
+                if (videoObjectFit === 'none') {
+                    videoScaledWidth = videoWidth;
+                    videoScaledHeight = videoHeight;
+                }
+                else if (videoObjectFit === 'cover' ? videoAspectRatio > elementAspectRatio : videoAspectRatio < elementAspectRatio) {
+                    videoScaledHeight = smallerDimension;
+                    videoScaledWidth = videoScaledHeight * videoAspectRatio;
+                }
+                else {
+                    videoScaledWidth = smallerDimension;
+                    videoScaledHeight = videoScaledWidth / videoAspectRatio;
                 }
                 const [videoX, videoY] = videoStyle.objectPosition.split(' ').map((length, i) => {
                     const lengthValue = parseFloat(length);
@@ -3081,9 +3078,11 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                 const regionHeight = scanRegion.height || videoHeight;
                 const regionX = scanRegion.x || 0;
                 const regionY = scanRegion.y || 0;
+                const overlayTop = elementY + videoY + regionY / videoHeight * videoScaledHeight;
+                const overlayHeight = regionHeight / videoHeight * videoScaledHeight;
                 this.pnlOverlay.width = `${regionWidth / videoWidth * videoScaledWidth}px`;
-                this.pnlOverlay.height = `${regionHeight / videoHeight * videoScaledHeight}px`;
-                this.pnlOverlay.top = `${elementY + videoY + regionY / videoHeight * videoScaledHeight}px`;
+                this.pnlOverlay.height = `${overlayHeight}px`;
+                this.pnlOverlay.top = `${overlayTop}px`;
                 const isVideoMirrored = /scaleX\(-1\)/.test(video.style.transform);
                 this.pnlOverlay.left = `${elementX
                     + (isVideoMirrored ? elementWidth - videoX - videoScaledWidth : videoX)
@@ -3107,7 +3106,7 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                 downScaledHeight: DEFAULT_CANVAS_SIZE,
             };
         }
-        async onCopy() {
+        async handleCopy() {
             try {
                 await components_2.application.copyToClipboard(this.lbQRText.caption);
                 this.iconCopy.name = 'check';
@@ -3134,17 +3133,17 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                     this.$render("i-label", { caption: "QR Scanner", font: { size: '1.5rem', bold: true, color: Theme.colors.primary.main } }),
                     this.$render("i-icon", { name: "qrcode", fill: Theme.colors.primary.main, width: 150, height: 150 }),
                     this.$render("i-label", { caption: "QR codes play a crucial role in the advertising sector, providing users with effortless access to content. Beyond advertising, QR codes are utilized in various scenarios including facilitating QR code payments, enabling automatic authorizations, and simplifying the process of ordering food at restaurants.", class: index_css_1.textCenterStyle }),
-                    this.$render("i-button", { id: "btnScan", caption: "Start scan", enabled: false, font: { bold: true }, margin: { top: '1rem', bottom: '1rem' }, width: 160, maxWidth: "100%", padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, onClick: () => this.onStartQRScanner() }),
+                    this.$render("i-button", { id: "btnScan", caption: "Start scan", enabled: false, font: { bold: true }, margin: { top: '1rem', bottom: '1rem' }, width: 160, maxWidth: "100%", padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, onClick: this.handleStartQRScanner }),
                     this.$render("i-vstack", { id: "pnlInfo", gap: "0.75rem", visible: false, alignItems: "center" },
                         this.$render("i-label", { id: "lbQRText", border: { radius: 4, width: 1, style: 'solid', color: Theme.divider }, padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, wordBreak: "break-all", class: index_css_1.textCenterStyle }),
-                        this.$render("i-hstack", { gap: "0.5rem", verticalAlignment: "center", width: "fit-content", cursor: "pointer", onClick: () => this.onCopy() },
+                        this.$render("i-hstack", { gap: "0.5rem", verticalAlignment: "center", width: "fit-content", cursor: "pointer", onClick: this.handleCopy },
                             this.$render("i-icon", { id: "iconCopy", name: "copy", fill: Theme.colors.info.main, width: 18, height: 18 }),
                             this.$render("i-label", { caption: "Copy text", font: { size: '1rem', bold: true, color: Theme.colors.info.main } }))),
                     this.$render("i-label", { id: "lbError", visible: false, caption: "No camera detected", class: index_css_1.textCenterStyle, font: { color: Theme.colors.error.main } })),
-                this.$render("i-panel", { id: "pnlScanner", visible: false },
-                    this.$render("i-panel", { id: "pnlVideo" },
+                this.$render("i-modal", { id: "mdScanner", visible: false, width: "100%", height: "100%", overflow: "hidden", class: index_css_1.mdStyle },
+                    this.$render("i-panel", { id: "pnlVideo", height: "100%" },
                         this.$render("i-panel", { id: "pnlOverlay", visible: false, position: "absolute", cursor: "none", width: "100%", height: "100%" })),
-                    this.$render("i-button", { id: "btnStop", caption: "Stop scan", font: { bold: true }, width: 160, padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, class: index_css_1.btnStopStyle, onClick: () => this.onStopQRScanner(), mediaQueries: [
+                    this.$render("i-button", { id: "btnStop", caption: "Stop scan", font: { bold: true }, width: 160, padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, class: index_css_1.btnStopStyle, onClick: this.handleStopQRScanner, mediaQueries: [
                             {
                                 maxWidth: '768px',
                                 properties: {
