@@ -3,6 +3,9 @@ declare module "@scom/scom-qr-scanner/index.css.ts" {
     export const qrScannerStyle: string;
     export const textCenterStyle: string;
     export const btnStopStyle: string;
+    export const mdStyle: string;
+    export const scaleAnimation: string;
+    export const svgScanRegion: string;
 }
 /// <amd-module name="@scom/scom-qr-scanner/utils/bitMatrix.ts" />
 declare module "@scom/scom-qr-scanner/utils/bitMatrix.ts" {
@@ -221,7 +224,7 @@ declare module "@scom/scom-qr-scanner" {
         tag: any;
         private model;
         private vStackMain;
-        private pnlScanner;
+        private mdScanner;
         private pnlVideo;
         private pnlInfo;
         private lbQRText;
@@ -249,14 +252,14 @@ declare module "@scom/scom-qr-scanner" {
         getTag(): any;
         setTag(value: any): void;
         stop(): void;
-        private onStartQRScanner;
-        private onStopQRScanner;
+        private handleStartQRScanner;
+        private handleStopQRScanner;
         private decodeQRFromStream;
         private initQRScanner;
         private initHighLightScanRegion;
         private updateOverlay;
         private calculateScanRegion;
-        private onCopy;
+        private handleCopy;
         init(): Promise<void>;
         render(): any;
     }

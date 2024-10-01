@@ -9,9 +9,10 @@ import {
     application,
     Label,
     Icon,
-    VStack
+    VStack,
+    Modal
 } from '@ijstech/components';
-import { btnStopStyle, qrScannerStyle, textCenterStyle } from './index.css';
+import { btnStopStyle, mdStyle, qrScannerStyle, scaleAnimation, svgScanRegion, textCenterStyle } from './index.css';
 import { Model } from './model';
 const Theme = Styles.Theme.ThemeVars;
 declare const window: any;
@@ -30,13 +31,12 @@ declare global {
     }
 }
 
-
 @customElements('i-scom-qr-scanner')
 export default class ScomQRScanner extends Module {
     tag: any = {};
     private model: Model;
     private vStackMain: VStack;
-    private pnlScanner: Panel;
+    private mdScanner: Modal;
     private pnlVideo: Panel;
     private pnlInfo: Panel;
     private lbQRText: Label;
@@ -80,11 +80,11 @@ export default class ScomQRScanner extends Module {
     }
 
     stop() {
-        this.onStopQRScanner();
+        this.handleStopQRScanner();
         if (this.pnlInfo) this.pnlInfo.visible = false;
     }
 
-    private onStartQRScanner() {
+    private handleStartQRScanner() {
         const self = this;
         const video = this.video;
         this.scanning = true;
@@ -93,16 +93,12 @@ export default class ScomQRScanner extends Module {
             self.videoStream = stream;
             video.srcObject = stream;
             video.play();
-            self.video.style.display = 'none';
             self.pnlOverlay.visible = false;
             self.vStackMain.visible = false;
             self.btnStop.visible = false;
-            self.pnlScanner.visible = true;
+            self.mdScanner.visible = true;
             setTimeout(() => {
-                self.video.style.display = '';
-                setTimeout(() => {
-                    self.updateOverlay();
-                }, 500);
+                self.updateOverlay();
             }, 1000);
             video.onloadedmetadata = function () {
                 self.decodeQRFromStream(video);
@@ -129,16 +125,15 @@ export default class ScomQRScanner extends Module {
         }
     }
 
-    private onStopQRScanner() {
+    private handleStopQRScanner() {
         this.scanning = false;
         this.videoStream.getTracks().forEach(track => track.stop());
         this.vStackMain.visible = true;
-        this.pnlScanner.visible = false;
+        this.mdScanner.visible = false;
     }
 
     private async decodeQRFromStream(video: HTMLVideoElement) {
         if (!this.scanning) return;
-        const self = this;
         const canvasElement = document.createElement('canvas');
         const canvas = canvasElement.getContext('2d');
         canvasElement.width = video.videoWidth;
@@ -148,9 +143,9 @@ export default class ScomQRScanner extends Module {
 
         const code = await this.model.getQRCode(imageData);
         if (code?.data) {
-            self.pnlInfo.visible = true;
-            self.lbQRText.caption = code.data;
-            this.onStopQRScanner();
+            this.pnlInfo.visible = true;
+            this.lbQRText.caption = code.data;
+            this.handleStopQRScanner();
         } else {
             requestAnimationFrame(() => this.decodeQRFromStream(video));
         }
@@ -172,25 +167,17 @@ export default class ScomQRScanner extends Module {
 
     private initHighLightScanRegion() {
         this.pnlOverlay.clearInnerHTML();
-        this.pnlOverlay.innerHTML = '<svg viewBox="0 0 238 238" '
-            + 'preserveAspectRatio="none" style="position:absolute;width:100%;height:100%;left:0;top:0;'
-            + 'fill:none;stroke:#e9b213;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;">'
-            + '<path d="M31 2H10a8 8 0 0 0-8 8v21M207 2h21a8 8 0 0 1 8 8v21m0 176v21a8 8 0 0 1-8 8h-21m-176 '
-            + '0H10a8 8 0 0 1-8-8v-21"/></svg>';
-        try {
-            this.pnlOverlay.firstElementChild!.animate({ transform: ['scale(.98)', 'scale(1.01)'] }, {
-                duration: 400,
-                iterations: Infinity,
-                direction: 'alternate',
-                easing: 'ease-in-out',
-            });
-        } catch { }
+        this.pnlOverlay.innerHTML = svgScanRegion;
+        const overlayElement = this.pnlOverlay.firstElementChild as HTMLElement;
+        if (overlayElement) {
+            overlayElement.style.animation = `${scaleAnimation} 400ms infinite alternate ease-in-out`;
+        }
         window.addEventListener('resize', () => { this.updateOverlay() });
     }
 
     private updateOverlay() {
         requestAnimationFrame(() => {
-            if (!this.pnlOverlay || !this.pnlScanner?.visible) return;
+            if (!this.pnlOverlay || !this.mdScanner?.visible) return;
             const video = this.video;
             const videoWidth = video.videoWidth;
             const videoHeight = video.videoHeight;
@@ -205,47 +192,34 @@ export default class ScomQRScanner extends Module {
             const elementAspectRatio = elementWidth / elementHeight;
             let videoScaledWidth: number;
             let videoScaledHeight: number;
-            switch (videoObjectFit) {
-                case 'none':
-                    videoScaledWidth = videoWidth;
-                    videoScaledHeight = videoHeight;
-                    break;
-                case 'fill':
-                    videoScaledWidth = elementWidth;
-                    videoScaledHeight = elementHeight;
-                    break;
-                default:
-                    if (videoObjectFit === 'cover'
-                        ? videoAspectRatio > elementAspectRatio
-                        : videoAspectRatio < elementAspectRatio) {
-                        videoScaledHeight = elementHeight;
-                        videoScaledWidth = videoScaledHeight * videoAspectRatio;
-                    } else {
-                        videoScaledWidth = elementWidth;
-                        videoScaledHeight = videoScaledWidth / videoAspectRatio;
-                    }
-                    if (videoObjectFit === 'scale-down') {
-                        videoScaledWidth = Math.min(videoScaledWidth, videoWidth);
-                        videoScaledHeight = Math.min(videoScaledHeight, videoHeight);
-                    }
+            const smallerDimension = elementHeight > elementWidth ? elementWidth : elementHeight;
+            if (videoObjectFit === 'none') {
+                videoScaledWidth = videoWidth;
+                videoScaledHeight = videoHeight;
+            } else if (videoObjectFit === 'cover' ? videoAspectRatio > elementAspectRatio : videoAspectRatio < elementAspectRatio) {
+                videoScaledHeight = smallerDimension;
+                videoScaledWidth = videoScaledHeight * videoAspectRatio;
+            } else {
+                videoScaledWidth = smallerDimension;
+                videoScaledHeight = videoScaledWidth / videoAspectRatio;
             }
-
-            const [videoX, videoY] = videoStyle.objectPosition.split(' ').map((length, i) => {
+            const [videoX, videoY] = videoStyle.objectPosition.split(' ').map((length: string, i: number) => {
                 const lengthValue = parseFloat(length);
                 return length.endsWith('%')
                     ? (!i ? elementWidth - videoScaledWidth : elementHeight - videoScaledHeight) * lengthValue / 100
                     : lengthValue;
             });
-
             const scanRegion = this.calculateScanRegion(video);
             const regionWidth = scanRegion.width || videoWidth;
             const regionHeight = scanRegion.height || videoHeight;
             const regionX = scanRegion.x || 0;
             const regionY = scanRegion.y || 0;
 
+            const overlayTop = elementY + videoY + regionY / videoHeight * videoScaledHeight;
+            const overlayHeight = regionHeight / videoHeight * videoScaledHeight;
             this.pnlOverlay.width = `${regionWidth / videoWidth * videoScaledWidth}px`;
-            this.pnlOverlay.height = `${regionHeight / videoHeight * videoScaledHeight}px`;
-            this.pnlOverlay.top = `${elementY + videoY + regionY / videoHeight * videoScaledHeight}px`;
+            this.pnlOverlay.height = `${overlayHeight}px`;
+            this.pnlOverlay.top = `${overlayTop}px`;
             const isVideoMirrored = /scaleX\(-1\)/.test(video.style.transform!);
             this.pnlOverlay.left = `${elementX
                 + (isVideoMirrored ? elementWidth - videoX - videoScaledWidth : videoX)
@@ -269,7 +243,7 @@ export default class ScomQRScanner extends Module {
         };
     }
 
-    private async onCopy() {
+    private async handleCopy() {
         try {
             await application.copyToClipboard(this.lbQRText.caption);
             this.iconCopy.name = 'check';
@@ -315,7 +289,7 @@ export default class ScomQRScanner extends Module {
                         width={160}
                         maxWidth="100%"
                         padding={{ left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }}
-                        onClick={() => this.onStartQRScanner()}
+                        onClick={this.handleStartQRScanner}
                     />
                     <i-vstack id="pnlInfo" gap="0.75rem" visible={false} alignItems="center">
                         <i-label
@@ -325,7 +299,7 @@ export default class ScomQRScanner extends Module {
                             wordBreak="break-all"
                             class={textCenterStyle}
                         />
-                        <i-hstack gap="0.5rem" verticalAlignment="center" width="fit-content" cursor="pointer" onClick={() => this.onCopy()}>
+                        <i-hstack gap="0.5rem" verticalAlignment="center" width="fit-content" cursor="pointer" onClick={this.handleCopy}>
                             <i-icon id="iconCopy" name="copy" fill={Theme.colors.info.main} width={18} height={18} />
                             <i-label caption="Copy text" font={{ size: '1rem', bold: true, color: Theme.colors.info.main }} />
                         </i-hstack>
@@ -338,8 +312,8 @@ export default class ScomQRScanner extends Module {
                         font={{ color: Theme.colors.error.main }}
                     />
                 </i-vstack>
-                <i-panel id="pnlScanner" visible={false}>
-                    <i-panel id="pnlVideo">
+                <i-modal id="mdScanner" visible={false} width="100%" height="100%" overflow="hidden" class={mdStyle}>
+                    <i-panel id="pnlVideo" height="100%">
                         <i-panel id="pnlOverlay" visible={false} position="absolute" cursor="none" width="100%" height="100%" />
                     </i-panel>
                     <i-button
@@ -349,7 +323,7 @@ export default class ScomQRScanner extends Module {
                         width={160}
                         padding={{ left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }}
                         class={btnStopStyle}
-                        onClick={() => this.onStopQRScanner()}
+                        onClick={this.handleStopQRScanner}
                         mediaQueries={[
                             {
                                 maxWidth: '768px',
@@ -359,7 +333,7 @@ export default class ScomQRScanner extends Module {
                             }
                         ]}
                     />
-                </i-panel>
+                </i-modal>
             </i-vstack>
         )
     }
