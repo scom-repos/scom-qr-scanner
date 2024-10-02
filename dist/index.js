@@ -7,7 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 define("@scom/scom-qr-scanner/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.svgScanRegion = exports.scaleAnimation = exports.mdStyle = exports.btnStopStyle = exports.textCenterStyle = exports.qrScannerStyle = void 0;
+    exports.svgScanRegion = exports.scaleAnimation = exports.mdStyle = exports.btnStopStyle = exports.textCenterStyle = exports.alertStyle = exports.qrScannerStyle = void 0;
     const Theme = components_1.Styles.Theme.ThemeVars;
     exports.qrScannerStyle = components_1.Styles.style({
         $nest: {
@@ -22,6 +22,13 @@ define("@scom/scom-qr-scanner/index.css.ts", ["require", "exports", "@ijstech/co
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover'
+            }
+        }
+    });
+    exports.alertStyle = components_1.Styles.style({
+        $nest: {
+            'i-vstack i-label': {
+                textAlign: 'center'
             }
         }
     });
@@ -2948,10 +2955,20 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
         setTag(value) {
             this.model.setTag(value);
         }
+        start() {
+            const { isMobile, isHttps, hasCamera } = this.model;
+            if (!hasCamera) {
+                this.mdAlert.visible = true;
+                this.mdAlert.content = isMobile && !isHttps ? 'The QR scanner does not support HTTP when using a mobile device. Please ensure that the website is served over HTTPS for compatibility with the scanner!' : 'No camera detected!';
+                this.mdAlert.showModal();
+                return;
+            }
+            this.handleStartQRScanner();
+        }
         stop() {
             this.handleStopQRScanner();
-            if (this.pnlInfo)
-                this.pnlInfo.visible = false;
+            if (this.mdScanner)
+                this.mdScanner.visible = false;
         }
         handleStartQRScanner() {
             const self = this;
@@ -2962,7 +2979,7 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                 video.srcObject = stream;
                 video.play();
                 self.pnlOverlay.visible = false;
-                self.vStackMain.visible = false;
+                self.mdInfo.visible = false;
                 self.btnStop.visible = false;
                 self.mdScanner.visible = true;
                 setTimeout(() => {
@@ -2992,7 +3009,6 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
         handleStopQRScanner() {
             this.scanning = false;
             this.videoStream.getTracks().forEach(track => track.stop());
-            this.vStackMain.visible = true;
             this.mdScanner.visible = false;
         }
         async decodeQRFromStream(video) {
@@ -3006,25 +3022,19 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
             const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             const code = await this.model.getQRCode(imageData);
             if (code?.data) {
-                this.pnlInfo.visible = true;
-                this.lbQRText.caption = code.data;
                 this.handleStopQRScanner();
+                this.lbQRText.caption = code.data;
+                this.mdInfo.visible = true;
             }
             else {
                 requestAnimationFrame(() => this.decodeQRFromStream(video));
             }
         }
         async initQRScanner() {
-            const { isMobile, isHttps, hasCamera } = this.model;
             const video = this.createElement('video', this.pnlVideo);
             video.setAttribute('playsinline', 'true');
             this.video = video;
-            this.btnScan.enabled = hasCamera;
-            this.lbError.visible = !hasCamera;
-            if (!hasCamera) {
-                this.lbError.caption = isMobile && !isHttps ? 'The QR scanner does not support HTTP when using a mobile device. Please ensure that the website is served over HTTPS for compatibility with the scanner!' : 'No camera detected!';
-            }
-            else {
+            if (this.model.hasCamera) {
                 this.initHighLightScanRegion();
             }
         }
@@ -3128,18 +3138,7 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
             this.initQRScanner();
         }
         render() {
-            return (this.$render("i-vstack", { alignItems: "center", class: index_css_1.qrScannerStyle },
-                this.$render("i-vstack", { id: "vStackMain", padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, gap: "1rem", horizontalAlignment: "center", maxWidth: 480 },
-                    this.$render("i-label", { caption: "QR Scanner", font: { size: '1.5rem', bold: true, color: Theme.colors.primary.main } }),
-                    this.$render("i-icon", { name: "qrcode", fill: Theme.colors.primary.main, width: 150, height: 150 }),
-                    this.$render("i-label", { caption: "QR codes play a crucial role in the advertising sector, providing users with effortless access to content. Beyond advertising, QR codes are utilized in various scenarios including facilitating QR code payments, enabling automatic authorizations, and simplifying the process of ordering food at restaurants.", class: index_css_1.textCenterStyle }),
-                    this.$render("i-button", { id: "btnScan", caption: "Start scan", enabled: false, font: { bold: true }, margin: { top: '1rem', bottom: '1rem' }, width: 160, maxWidth: "100%", padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, onClick: this.handleStartQRScanner }),
-                    this.$render("i-vstack", { id: "pnlInfo", gap: "0.75rem", visible: false, alignItems: "center" },
-                        this.$render("i-label", { id: "lbQRText", border: { radius: 4, width: 1, style: 'solid', color: Theme.divider }, padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, wordBreak: "break-all", class: index_css_1.textCenterStyle }),
-                        this.$render("i-hstack", { gap: "0.5rem", verticalAlignment: "center", width: "fit-content", cursor: "pointer", onClick: this.handleCopy },
-                            this.$render("i-icon", { id: "iconCopy", name: "copy", fill: Theme.colors.info.main, width: 18, height: 18 }),
-                            this.$render("i-label", { caption: "Copy text", font: { size: '1rem', bold: true, color: Theme.colors.info.main } }))),
-                    this.$render("i-label", { id: "lbError", visible: false, caption: "No camera detected", class: index_css_1.textCenterStyle, font: { color: Theme.colors.error.main } })),
+            return (this.$render("i-panel", { class: index_css_1.qrScannerStyle },
                 this.$render("i-modal", { id: "mdScanner", visible: false, width: "100%", height: "100%", overflow: "hidden", class: index_css_1.mdStyle },
                     this.$render("i-panel", { id: "pnlVideo", height: "100%" },
                         this.$render("i-panel", { id: "pnlOverlay", visible: false, position: "absolute", cursor: "none", width: "100%", height: "100%" })),
@@ -3150,7 +3149,15 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                                     maxWidth: '8.125rem'
                                 }
                             }
-                        ] }))));
+                        ] })),
+                this.$render("i-modal", { id: "mdInfo", visible: false, title: "Scanned QR Result", width: "400px", height: "auto", maxWidth: "90vw", closeIcon: { name: 'times' } },
+                    this.$render("i-vstack", { gap: "1rem", horizontalAlignment: "center", alignItems: "center", padding: { top: '2rem', bottom: '1rem', left: '1rem', right: '1rem' } },
+                        this.$render("i-hstack", { gap: "0.75rem", verticalAlignment: "center" },
+                            this.$render("i-label", { id: "lbQRText", border: { radius: 4, width: 1, style: 'solid', color: Theme.divider }, padding: { left: '0.75rem', right: '0.75rem', top: '0.75rem', bottom: '0.75rem' }, wordBreak: "break-all", class: index_css_1.textCenterStyle }),
+                            this.$render("i-icon", { id: "iconCopy", name: "copy", fill: Theme.colors.info.main, width: 20, height: 20, minWidth: 20, cursor: "pointer", onClick: this.handleCopy })),
+                        this.$render("i-hstack", { margin: { top: '1rem' }, verticalAlignment: "center", horizontalAlignment: "center" },
+                            this.$render("i-button", { caption: "Scan again", width: 120, border: { radius: 5 }, padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, onClick: this.handleStartQRScanner })))),
+                this.$render("i-alert", { id: "mdAlert", visible: false, maxWidth: "90%", status: "error", title: "Failed to start the scanner", content: "No camera detected!", class: index_css_1.alertStyle })));
         }
     };
     ScomQRScanner = __decorate([

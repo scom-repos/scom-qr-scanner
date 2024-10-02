@@ -9,10 +9,10 @@ import {
     application,
     Label,
     Icon,
-    VStack,
-    Modal
+    Modal,
+    Alert
 } from '@ijstech/components';
-import { btnStopStyle, mdStyle, qrScannerStyle, scaleAnimation, svgScanRegion, textCenterStyle } from './index.css';
+import { alertStyle, btnStopStyle, mdStyle, qrScannerStyle, scaleAnimation, svgScanRegion, textCenterStyle } from './index.css';
 import { Model } from './model';
 const Theme = Styles.Theme.ThemeVars;
 declare const window: any;
@@ -35,20 +35,18 @@ declare global {
 export default class ScomQRScanner extends Module {
     tag: any = {};
     private model: Model;
-    private vStackMain: VStack;
     private mdScanner: Modal;
+    private mdInfo: Modal;
     private pnlVideo: Panel;
-    private pnlInfo: Panel;
     private lbQRText: Label;
     private iconCopy: Icon;
     private copyTimer: any;
-    private btnScan: Button;
     private btnStop: Button;
-    private lbError: Label;
     private video: HTMLVideoElement;
     private scanning: boolean;
     private videoStream: MediaStream;
     private pnlOverlay: Panel;
+    private mdAlert: Alert;
 
     static async create(options?: ScomQRScannerElement, parent?: Container) {
         let self = new this(parent, options);
@@ -79,9 +77,20 @@ export default class ScomQRScanner extends Module {
         this.model.setTag(value);
     }
 
+    start() {
+        const { isMobile, isHttps, hasCamera } = this.model;
+        if (!hasCamera) {
+            this.mdAlert.visible = true;
+            this.mdAlert.content = isMobile && !isHttps ? 'The QR scanner does not support HTTP when using a mobile device. Please ensure that the website is served over HTTPS for compatibility with the scanner!' : 'No camera detected!';
+            this.mdAlert.showModal();
+            return;
+        }
+        this.handleStartQRScanner();
+    }
+
     stop() {
         this.handleStopQRScanner();
-        if (this.pnlInfo) this.pnlInfo.visible = false;
+        if (this.mdScanner) this.mdScanner.visible = false;
     }
 
     private handleStartQRScanner() {
@@ -94,7 +103,7 @@ export default class ScomQRScanner extends Module {
             video.srcObject = stream;
             video.play();
             self.pnlOverlay.visible = false;
-            self.vStackMain.visible = false;
+            self.mdInfo.visible = false;
             self.btnStop.visible = false;
             self.mdScanner.visible = true;
             setTimeout(() => {
@@ -128,7 +137,6 @@ export default class ScomQRScanner extends Module {
     private handleStopQRScanner() {
         this.scanning = false;
         this.videoStream.getTracks().forEach(track => track.stop());
-        this.vStackMain.visible = true;
         this.mdScanner.visible = false;
     }
 
@@ -143,24 +151,19 @@ export default class ScomQRScanner extends Module {
 
         const code = await this.model.getQRCode(imageData);
         if (code?.data) {
-            this.pnlInfo.visible = true;
-            this.lbQRText.caption = code.data;
             this.handleStopQRScanner();
+            this.lbQRText.caption = code.data;
+            this.mdInfo.visible = true;
         } else {
             requestAnimationFrame(() => this.decodeQRFromStream(video));
         }
     }
 
     private async initQRScanner() {
-        const { isMobile, isHttps, hasCamera } = this.model;
         const video = this.createElement('video', this.pnlVideo) as HTMLVideoElement;
         video.setAttribute('playsinline', 'true');
         this.video = video;
-        this.btnScan.enabled = hasCamera;
-        this.lbError.visible = !hasCamera;
-        if (!hasCamera) {
-            this.lbError.caption = isMobile && !isHttps ? 'The QR scanner does not support HTTP when using a mobile device. Please ensure that the website is served over HTTPS for compatibility with the scanner!' : 'No camera detected!';
-        } else {
+        if (this.model.hasCamera) {
             this.initHighLightScanRegion();
         }
     }
@@ -266,52 +269,7 @@ export default class ScomQRScanner extends Module {
 
     render() {
         return (
-            <i-vstack alignItems="center" class={qrScannerStyle}>
-                <i-vstack
-                    id="vStackMain"
-                    padding={{ left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }}
-                    gap="1rem"
-                    horizontalAlignment="center"
-                    maxWidth={480}
-                >
-                    <i-label caption="QR Scanner" font={{ size: '1.5rem', bold: true, color: Theme.colors.primary.main }} />
-                    <i-icon name="qrcode" fill={Theme.colors.primary.main} width={150} height={150} />
-                    <i-label
-                        caption="QR codes play a crucial role in the advertising sector, providing users with effortless access to content. Beyond advertising, QR codes are utilized in various scenarios including facilitating QR code payments, enabling automatic authorizations, and simplifying the process of ordering food at restaurants."
-                        class={textCenterStyle}
-                    />
-                    <i-button
-                        id="btnScan"
-                        caption="Start scan"
-                        enabled={false}
-                        font={{ bold: true }}
-                        margin={{ top: '1rem', bottom: '1rem' }}
-                        width={160}
-                        maxWidth="100%"
-                        padding={{ left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }}
-                        onClick={this.handleStartQRScanner}
-                    />
-                    <i-vstack id="pnlInfo" gap="0.75rem" visible={false} alignItems="center">
-                        <i-label
-                            id="lbQRText"
-                            border={{ radius: 4, width: 1, style: 'solid', color: Theme.divider }}
-                            padding={{ left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }}
-                            wordBreak="break-all"
-                            class={textCenterStyle}
-                        />
-                        <i-hstack gap="0.5rem" verticalAlignment="center" width="fit-content" cursor="pointer" onClick={this.handleCopy}>
-                            <i-icon id="iconCopy" name="copy" fill={Theme.colors.info.main} width={18} height={18} />
-                            <i-label caption="Copy text" font={{ size: '1rem', bold: true, color: Theme.colors.info.main }} />
-                        </i-hstack>
-                    </i-vstack>
-                    <i-label
-                        id="lbError"
-                        visible={false}
-                        caption="No camera detected"
-                        class={textCenterStyle}
-                        font={{ color: Theme.colors.error.main }}
-                    />
-                </i-vstack>
+            <i-panel class={qrScannerStyle}>
                 <i-modal id="mdScanner" visible={false} width="100%" height="100%" overflow="hidden" class={mdStyle}>
                     <i-panel id="pnlVideo" height="100%">
                         <i-panel id="pnlOverlay" visible={false} position="absolute" cursor="none" width="100%" height="100%" />
@@ -334,7 +292,66 @@ export default class ScomQRScanner extends Module {
                         ]}
                     />
                 </i-modal>
-            </i-vstack>
+
+                <i-modal
+                    id="mdInfo"
+                    visible={false}
+                    title="Scanned QR Result"
+                    width="400px"
+                    height="auto"
+                    maxWidth="90vw"
+                    closeIcon={{ name: 'times' }}
+                >
+                    <i-vstack
+                        gap="1rem"
+                        horizontalAlignment="center"
+                        alignItems="center"
+                        padding={{ top: '2rem', bottom: '1rem', left: '1rem', right: '1rem' }}
+                    >
+                        <i-hstack
+                            gap="0.75rem"
+                            verticalAlignment="center"
+                        >
+                            <i-label
+                                id="lbQRText"
+                                border={{ radius: 4, width: 1, style: 'solid', color: Theme.divider }}
+                                padding={{ left: '0.75rem', right: '0.75rem', top: '0.75rem', bottom: '0.75rem' }}
+                                wordBreak="break-all"
+                                class={textCenterStyle}
+                            />
+                            <i-icon
+                                id="iconCopy"
+                                name="copy"
+                                fill={Theme.colors.info.main}
+                                width={20}
+                                height={20}
+                                minWidth={20}
+                                cursor="pointer"
+                                onClick={this.handleCopy}
+                            />
+                        </i-hstack>
+                        <i-hstack margin={{ top: '1rem' }} verticalAlignment="center" horizontalAlignment="center">
+                            <i-button
+                                caption="Scan again"
+                                width={120}
+                                border={{ radius: 5 }}
+                                padding={{ left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }}
+                                onClick={this.handleStartQRScanner}
+                            />
+                        </i-hstack>
+                    </i-vstack>
+                </i-modal>
+
+                <i-alert
+                    id="mdAlert"
+                    visible={false}
+                    maxWidth="90%"
+                    status="error"
+                    title="Failed to start the scanner"
+                    content="No camera detected!"
+                    class={alertStyle}
+                />
+            </i-panel>
         )
     }
 }
