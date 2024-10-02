@@ -18,6 +18,14 @@ export const qrScannerStyle = Styles.style({
   }
 })
 
+export const alertStyle = Styles.style({
+  $nest: {
+    'i-vstack i-label': {
+      textAlign: 'center'
+    }
+  }
+})
+
 export const textCenterStyle = Styles.style({
   textAlign: 'center'
 })

@@ -1,6 +1,7 @@
 /// <amd-module name="@scom/scom-qr-scanner/index.css.ts" />
 declare module "@scom/scom-qr-scanner/index.css.ts" {
     export const qrScannerStyle: string;
+    export const alertStyle: string;
     export const textCenterStyle: string;
     export const btnStopStyle: string;
     export const mdStyle: string;
@@ -223,20 +224,18 @@ declare module "@scom/scom-qr-scanner" {
     export default class ScomQRScanner extends Module {
         tag: any;
         private model;
-        private vStackMain;
         private mdScanner;
+        private mdInfo;
         private pnlVideo;
-        private pnlInfo;
         private lbQRText;
         private iconCopy;
         private copyTimer;
-        private btnScan;
         private btnStop;
-        private lbError;
         private video;
         private scanning;
         private videoStream;
         private pnlOverlay;
+        private mdAlert;
         static create(options?: ScomQRScannerElement, parent?: Container): Promise<ScomQRScanner>;
         getConfigurators(): {
             name: string;
@@ -251,6 +250,7 @@ declare module "@scom/scom-qr-scanner" {
         getData(): {};
         getTag(): any;
         setTag(value: any): void;
+        start(): void;
         stop(): void;
         private handleStartQRScanner;
         private handleStopQRScanner;
