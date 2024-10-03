@@ -10,9 +10,10 @@ import {
     Label,
     Icon,
     Modal,
-    Alert
+    Alert,
+    HStack
 } from '@ijstech/components';
-import { alertStyle, btnStopStyle, mdStyle, qrScannerStyle, scaleAnimation, svgScanRegion, textCenterStyle } from './index.css';
+import { alertStyle, mdStyle, qrScannerStyle, scaleAnimation, svgScanRegion, textNoWrapStyle, wrapperInfoStyle } from './index.css';
 import { Model } from './model';
 const Theme = Styles.Theme.ThemeVars;
 declare const window: any;
@@ -36,7 +37,7 @@ export default class ScomQRScanner extends Module {
     tag: any = {};
     private model: Model;
     private mdScanner: Modal;
-    private mdInfo: Modal;
+    private pnlInfo: HStack;
     private pnlVideo: Panel;
     private lbQRText: Label;
     private iconCopy: Icon;
@@ -103,7 +104,7 @@ export default class ScomQRScanner extends Module {
             video.srcObject = stream;
             video.play();
             self.pnlOverlay.visible = false;
-            self.mdInfo.visible = false;
+            self.pnlInfo.visible = false;
             self.btnStop.visible = false;
             self.mdScanner.visible = true;
             setTimeout(() => {
@@ -151,12 +152,10 @@ export default class ScomQRScanner extends Module {
 
         const code = await this.model.getQRCode(imageData);
         if (code?.data) {
-            this.handleStopQRScanner();
             this.lbQRText.caption = code.data;
-            this.mdInfo.visible = true;
-        } else {
-            requestAnimationFrame(() => this.decodeQRFromStream(video));
+            if (!this.pnlInfo.visible) this.pnlInfo.visible = true;
         }
+        requestAnimationFrame(() => this.decodeQRFromStream(video));
     }
 
     private async initQRScanner() {
@@ -274,69 +273,61 @@ export default class ScomQRScanner extends Module {
                     <i-panel id="pnlVideo" height="100%">
                         <i-panel id="pnlOverlay" visible={false} position="absolute" cursor="none" width="100%" height="100%" />
                     </i-panel>
-                    <i-button
-                        id="btnStop"
-                        caption="Stop scan"
-                        font={{ bold: true }}
-                        width={160}
-                        padding={{ left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }}
-                        class={btnStopStyle}
-                        onClick={this.handleStopQRScanner}
-                        mediaQueries={[
-                            {
-                                maxWidth: '768px',
-                                properties: {
-                                    maxWidth: '8.125rem'
-                                }
-                            }
-                        ]}
-                    />
-                </i-modal>
 
-                <i-modal
-                    id="mdInfo"
-                    visible={false}
-                    title="Scanned QR Result"
-                    width="400px"
-                    height="auto"
-                    maxWidth="90vw"
-                    closeIcon={{ name: 'times' }}
-                >
                     <i-vstack
-                        gap="1rem"
+                        gap="1.5rem"
+                        width="100%"
                         horizontalAlignment="center"
                         alignItems="center"
-                        padding={{ top: '2rem', bottom: '1rem', left: '1rem', right: '1rem' }}
+                        padding={{ left: '1rem', right: '1rem' }}
+                        class={wrapperInfoStyle}
                     >
                         <i-hstack
+                            id="pnlInfo"
+                            visible={false}
                             gap="0.75rem"
+                            width="100%"
                             verticalAlignment="center"
+                            horizontalAlignment="center"
                         >
                             <i-label
                                 id="lbQRText"
-                                border={{ radius: 4, width: 1, style: 'solid', color: Theme.divider }}
-                                padding={{ left: '0.75rem', right: '0.75rem', top: '0.75rem', bottom: '0.75rem' }}
-                                wordBreak="break-all"
-                                class={textCenterStyle}
+                                font={{ color: Theme.input.fontColor }}
+                                background={{ color: Theme.input.background }}
+                                border={{ radius: 8 }}
+                                padding={{ left: '0.75rem', right: '0.75rem', top: '0.5rem', bottom: '0.5rem' }}
+                                maxWidth="calc(100% - 50px)"
+                                overflow="hidden"
+                                textOverflow="ellipsis"
+                                class={textNoWrapStyle}
                             />
                             <i-icon
                                 id="iconCopy"
                                 name="copy"
-                                fill={Theme.colors.info.main}
-                                width={20}
-                                height={20}
-                                minWidth={20}
+                                fill={Theme.colors.primary.main}
+                                width={24}
+                                height={24}
+                                minWidth={24}
                                 cursor="pointer"
                                 onClick={this.handleCopy}
                             />
                         </i-hstack>
-                        <i-hstack margin={{ top: '1rem' }} verticalAlignment="center" horizontalAlignment="center">
+                        <i-hstack verticalAlignment="center" horizontalAlignment="center">
                             <i-button
-                                caption="Scan again"
-                                width={120}
-                                border={{ radius: 5 }}
+                                id="btnStop"
+                                caption="Stop scan"
+                                font={{ bold: true }}
+                                width={160}
                                 padding={{ left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }}
-                                onClick={this.handleStartQRScanner}
+                                onClick={this.handleStopQRScanner}
+                                mediaQueries={[
+                                    {
+                                        maxWidth: '768px',
+                                        properties: {
+                                            maxWidth: '8.125rem'
+                                        }
+                                    }
+                                ]}
                             />
                         </i-hstack>
                     </i-vstack>

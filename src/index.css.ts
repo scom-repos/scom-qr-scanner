@@ -26,20 +26,22 @@ export const alertStyle = Styles.style({
   }
 })
 
-export const textCenterStyle = Styles.style({
-  textAlign: 'center'
+export const textNoWrapStyle = Styles.style({
+  whiteSpace: 'nowrap'
 })
 
-export const btnStopStyle = Styles.style({
+export const wrapperInfoStyle = Styles.style({
   position: 'absolute',
-  top: '85%',
+  top: 'calc(100% - 70px)',
   left: '50%',
-  transform: 'translate(-50%, -50%)',
-  margin: '0 auto'
+  transform: 'translate(-50%, -100%)'
 })
 
 export const mdStyle = Styles.style({
   $nest: {
+    '.modal-wrapper': {
+      zIndex: 9999
+    },
     '.modal': {
       padding: 0
     },

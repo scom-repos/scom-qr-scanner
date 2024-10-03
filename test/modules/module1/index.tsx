@@ -1,4 +1,4 @@
-import { Module, customModule, Container, Label } from '@ijstech/components';
+import { Module, customModule, Container } from '@ijstech/components';
 import ScomQRScanner from '@scom/scom-qr-scanner';
 
 @customModule
