@@ -7,7 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 define("@scom/scom-qr-scanner/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.svgScanRegion = exports.scaleAnimation = exports.mdStyle = exports.btnStopStyle = exports.textCenterStyle = exports.alertStyle = exports.qrScannerStyle = void 0;
+    exports.svgScanRegion = exports.scaleAnimation = exports.mdStyle = exports.wrapperInfoStyle = exports.textNoWrapStyle = exports.alertStyle = exports.qrScannerStyle = void 0;
     const Theme = components_1.Styles.Theme.ThemeVars;
     exports.qrScannerStyle = components_1.Styles.style({
         $nest: {
@@ -32,18 +32,20 @@ define("@scom/scom-qr-scanner/index.css.ts", ["require", "exports", "@ijstech/co
             }
         }
     });
-    exports.textCenterStyle = components_1.Styles.style({
-        textAlign: 'center'
+    exports.textNoWrapStyle = components_1.Styles.style({
+        whiteSpace: 'nowrap'
     });
-    exports.btnStopStyle = components_1.Styles.style({
+    exports.wrapperInfoStyle = components_1.Styles.style({
         position: 'absolute',
-        top: '85%',
+        top: 'calc(100% - 70px)',
         left: '50%',
-        transform: 'translate(-50%, -50%)',
-        margin: '0 auto'
+        transform: 'translate(-50%, -100%)'
     });
     exports.mdStyle = components_1.Styles.style({
         $nest: {
+            '.modal-wrapper': {
+                zIndex: 9999
+            },
             '.modal': {
                 padding: 0
             },
@@ -2979,7 +2981,7 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                 video.srcObject = stream;
                 video.play();
                 self.pnlOverlay.visible = false;
-                self.mdInfo.visible = false;
+                self.pnlInfo.visible = false;
                 self.btnStop.visible = false;
                 self.mdScanner.visible = true;
                 setTimeout(() => {
@@ -3022,13 +3024,11 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
             const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             const code = await this.model.getQRCode(imageData);
             if (code?.data) {
-                this.handleStopQRScanner();
                 this.lbQRText.caption = code.data;
-                this.mdInfo.visible = true;
+                if (!this.pnlInfo.visible)
+                    this.pnlInfo.visible = true;
             }
-            else {
-                requestAnimationFrame(() => this.decodeQRFromStream(video));
-            }
+            requestAnimationFrame(() => this.decodeQRFromStream(video));
         }
         async initQRScanner() {
             const video = this.createElement('video', this.pnlVideo);
@@ -3142,21 +3142,19 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                 this.$render("i-modal", { id: "mdScanner", visible: false, width: "100%", height: "100%", overflow: "hidden", class: index_css_1.mdStyle },
                     this.$render("i-panel", { id: "pnlVideo", height: "100%" },
                         this.$render("i-panel", { id: "pnlOverlay", visible: false, position: "absolute", cursor: "none", width: "100%", height: "100%" })),
-                    this.$render("i-button", { id: "btnStop", caption: "Stop scan", font: { bold: true }, width: 160, padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, class: index_css_1.btnStopStyle, onClick: this.handleStopQRScanner, mediaQueries: [
-                            {
-                                maxWidth: '768px',
-                                properties: {
-                                    maxWidth: '8.125rem'
-                                }
-                            }
-                        ] })),
-                this.$render("i-modal", { id: "mdInfo", visible: false, title: "Scanned QR Result", width: "400px", height: "auto", maxWidth: "90vw", closeIcon: { name: 'times' } },
-                    this.$render("i-vstack", { gap: "1rem", horizontalAlignment: "center", alignItems: "center", padding: { top: '2rem', bottom: '1rem', left: '1rem', right: '1rem' } },
-                        this.$render("i-hstack", { gap: "0.75rem", verticalAlignment: "center" },
-                            this.$render("i-label", { id: "lbQRText", border: { radius: 4, width: 1, style: 'solid', color: Theme.divider }, padding: { left: '0.75rem', right: '0.75rem', top: '0.75rem', bottom: '0.75rem' }, wordBreak: "break-all", class: index_css_1.textCenterStyle }),
-                            this.$render("i-icon", { id: "iconCopy", name: "copy", fill: Theme.colors.info.main, width: 20, height: 20, minWidth: 20, cursor: "pointer", onClick: this.handleCopy })),
-                        this.$render("i-hstack", { margin: { top: '1rem' }, verticalAlignment: "center", horizontalAlignment: "center" },
-                            this.$render("i-button", { caption: "Scan again", width: 120, border: { radius: 5 }, padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, onClick: this.handleStartQRScanner })))),
+                    this.$render("i-vstack", { gap: "1.5rem", width: "100%", horizontalAlignment: "center", alignItems: "center", padding: { left: '1rem', right: '1rem' }, class: index_css_1.wrapperInfoStyle },
+                        this.$render("i-hstack", { id: "pnlInfo", visible: false, gap: "0.75rem", width: "100%", verticalAlignment: "center", horizontalAlignment: "center" },
+                            this.$render("i-label", { id: "lbQRText", font: { color: Theme.input.fontColor }, background: { color: Theme.input.background }, border: { radius: 8 }, padding: { left: '0.75rem', right: '0.75rem', top: '0.5rem', bottom: '0.5rem' }, maxWidth: "calc(100% - 50px)", overflow: "hidden", textOverflow: "ellipsis", class: index_css_1.textNoWrapStyle }),
+                            this.$render("i-icon", { id: "iconCopy", name: "copy", fill: Theme.colors.primary.main, width: 24, height: 24, minWidth: 24, cursor: "pointer", onClick: this.handleCopy })),
+                        this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "center" },
+                            this.$render("i-button", { id: "btnStop", caption: "Stop scan", font: { bold: true }, width: 160, padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, onClick: this.handleStopQRScanner, mediaQueries: [
+                                    {
+                                        maxWidth: '768px',
+                                        properties: {
+                                            maxWidth: '8.125rem'
+                                        }
+                                    }
+                                ] })))),
                 this.$render("i-alert", { id: "mdAlert", visible: false, maxWidth: "90%", status: "error", title: "Failed to start the scanner", content: "No camera detected!", class: index_css_1.alertStyle })));
         }
     };

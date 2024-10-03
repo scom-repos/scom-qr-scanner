@@ -2,8 +2,8 @@
 declare module "@scom/scom-qr-scanner/index.css.ts" {
     export const qrScannerStyle: string;
     export const alertStyle: string;
-    export const textCenterStyle: string;
-    export const btnStopStyle: string;
+    export const textNoWrapStyle: string;
+    export const wrapperInfoStyle: string;
     export const mdStyle: string;
     export const scaleAnimation: string;
     export const svgScanRegion: string;
@@ -225,7 +225,7 @@ declare module "@scom/scom-qr-scanner" {
         tag: any;
         private model;
         private mdScanner;
-        private mdInfo;
+        private pnlInfo;
         private pnlVideo;
         private lbQRText;
         private iconCopy;
