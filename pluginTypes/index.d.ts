@@ -209,6 +209,30 @@ declare module "@scom/scom-qr-scanner/model.ts" {
         }>;
     }
 }
+/// <amd-module name="@scom/scom-qr-scanner/translations.json.ts" />
+declare module "@scom/scom-qr-scanner/translations.json.ts" {
+    const _default: {
+        en: {
+            http_mobile_waring: string;
+            no_camera_detected: string;
+            failed_to_start_the_scanner: string;
+            stop_scan: string;
+        };
+        "zh-hant": {
+            http_mobile_waring: string;
+            no_camera_detected: string;
+            failed_to_start_the_scanner: string;
+            stop_scan: string;
+        };
+        vi: {
+            http_mobile_waring: string;
+            no_camera_detected: string;
+            failed_to_start_the_scanner: string;
+            stop_scan: string;
+        };
+    };
+    export default _default;
+}
 /// <amd-module name="@scom/scom-qr-scanner" />
 declare module "@scom/scom-qr-scanner" {
     import { Module, Container, ControlElement } from '@ijstech/components';

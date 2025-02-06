@@ -2924,7 +2924,32 @@ define("@scom/scom-qr-scanner/model.ts", ["require", "exports", "@scom/scom-qr-s
     }
     exports.Model = Model;
 });
-define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@scom/scom-qr-scanner/index.css.ts", "@scom/scom-qr-scanner/model.ts"], function (require, exports, components_2, index_css_1, model_1) {
+define("@scom/scom-qr-scanner/translations.json.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    ///<amd-module name='@scom/scom-qr-scanner/translations.json.ts'/> 
+    exports.default = {
+        "en": {
+            "http_mobile_waring": "The QR scanner does not support HTTP when using a mobile device. Please ensure that the website is served over HTTPS for compatibility with the scanner!",
+            "no_camera_detected": "No camera detected!",
+            "failed_to_start_the_scanner": "Failed to start the scanner",
+            "stop_scan": "Stop scan"
+        },
+        "zh-hant": {
+            "http_mobile_waring": "使用移動設備時，QR掃描器不支援HTTP。請確保網站使用HTTPS，以便與掃描器兼容！",
+            "no_camera_detected": "未偵測到相機！",
+            "failed_to_start_the_scanner": "啟動掃描器失敗",
+            "stop_scan": "停止掃描"
+        },
+        "vi": {
+            "http_mobile_waring": "Trình quét QR không hỗ trợ HTTP khi sử dụng thiết bị di động. Vui lòng đảm bảo rằng trang web được phục vụ qua HTTPS để tương thích với trình quét!",
+            "no_camera_detected": "Không phát hiện được camera!",
+            "failed_to_start_the_scanner": "Không thể khởi động trình quét",
+            "stop_scan": "Dừng quét"
+        }
+    };
+});
+define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@scom/scom-qr-scanner/index.css.ts", "@scom/scom-qr-scanner/model.ts", "@scom/scom-qr-scanner/translations.json.ts"], function (require, exports, components_2, index_css_1, model_1, translations_json_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_2.Styles.Theme.ThemeVars;
@@ -2961,7 +2986,8 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
             const { isMobile, isHttps, hasCamera } = this.model;
             if (!hasCamera) {
                 this.mdAlert.visible = true;
-                this.mdAlert.content = isMobile && !isHttps ? 'The QR scanner does not support HTTP when using a mobile device. Please ensure that the website is served over HTTPS for compatibility with the scanner!' : 'No camera detected!';
+                this.mdAlert.title = this.i18n.get('$failed_to_start_the_scanner');
+                this.mdAlert.content = this.i18n.get(isMobile && !isHttps ? '$http_mobile_waring' : '$no_camera_detected');
                 this.mdAlert.showModal();
                 return;
             }
@@ -3131,6 +3157,7 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
             catch { }
         }
         async init() {
+            this.i18n.init({ ...translations_json_1.default });
             if (!this.model) {
                 this.model = new model_1.Model(this);
             }
@@ -3147,7 +3174,7 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                             this.$render("i-label", { id: "lbQRText", font: { color: Theme.input.fontColor }, background: { color: Theme.input.background }, border: { radius: 8 }, padding: { left: '0.75rem', right: '0.75rem', top: '0.5rem', bottom: '0.5rem' }, maxWidth: "calc(100% - 50px)", overflow: "hidden", textOverflow: "ellipsis", class: index_css_1.textNoWrapStyle }),
                             this.$render("i-icon", { id: "iconCopy", name: "copy", fill: Theme.colors.primary.main, width: 24, height: 24, minWidth: 24, cursor: "pointer", onClick: this.handleCopy })),
                         this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "center" },
-                            this.$render("i-button", { id: "btnStop", caption: "Stop scan", font: { bold: true }, width: 160, padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, onClick: this.handleStopQRScanner, mediaQueries: [
+                            this.$render("i-button", { id: "btnStop", caption: "$stop_scan", font: { bold: true }, width: 160, padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, onClick: this.handleStopQRScanner, mediaQueries: [
                                     {
                                         maxWidth: '768px',
                                         properties: {
@@ -3155,7 +3182,7 @@ define("@scom/scom-qr-scanner", ["require", "exports", "@ijstech/components", "@
                                         }
                                     }
                                 ] })))),
-                this.$render("i-alert", { id: "mdAlert", visible: false, maxWidth: "90%", status: "error", title: "Failed to start the scanner", content: "No camera detected!", class: index_css_1.alertStyle })));
+                this.$render("i-alert", { id: "mdAlert", visible: false, maxWidth: "90%", status: "error", content: "$no_camera_detected!", class: index_css_1.alertStyle })));
         }
     };
     ScomQRScanner = __decorate([
