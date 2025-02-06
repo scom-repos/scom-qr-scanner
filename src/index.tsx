@@ -15,6 +15,7 @@ import {
 } from '@ijstech/components';
 import { alertStyle, mdStyle, qrScannerStyle, scaleAnimation, svgScanRegion, textNoWrapStyle, wrapperInfoStyle } from './index.css';
 import { Model } from './model';
+import translations from './translations.json';
 const Theme = Styles.Theme.ThemeVars;
 declare const window: any;
 declare const navigator: any;
@@ -82,7 +83,8 @@ export default class ScomQRScanner extends Module {
         const { isMobile, isHttps, hasCamera } = this.model;
         if (!hasCamera) {
             this.mdAlert.visible = true;
-            this.mdAlert.content = isMobile && !isHttps ? 'The QR scanner does not support HTTP when using a mobile device. Please ensure that the website is served over HTTPS for compatibility with the scanner!' : 'No camera detected!';
+            this.mdAlert.title = this.i18n.get('$failed_to_start_the_scanner');
+            this.mdAlert.content = this.i18n.get(isMobile && !isHttps ? '$http_mobile_waring' : '$no_camera_detected');
             this.mdAlert.showModal();
             return;
         }
@@ -259,6 +261,7 @@ export default class ScomQRScanner extends Module {
     }
 
     async init() {
+        this.i18n.init({ ...translations });
         if (!this.model) {
             this.model = new Model(this);
         }
@@ -315,7 +318,7 @@ export default class ScomQRScanner extends Module {
                         <i-hstack verticalAlignment="center" horizontalAlignment="center">
                             <i-button
                                 id="btnStop"
-                                caption="Stop scan"
+                                caption="$stop_scan"
                                 font={{ bold: true }}
                                 width={160}
                                 padding={{ left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }}
@@ -338,8 +341,7 @@ export default class ScomQRScanner extends Module {
                     visible={false}
                     maxWidth="90%"
                     status="error"
-                    title="Failed to start the scanner"
-                    content="No camera detected!"
+                    content="$no_camera_detected!"
                     class={alertStyle}
                 />
             </i-panel>
